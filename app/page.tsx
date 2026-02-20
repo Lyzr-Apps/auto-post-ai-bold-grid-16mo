@@ -579,194 +579,60 @@ function PostCard({
 }
 
 function ConnectedAccountsScreen() {
-  const [connectionStates, setConnectionStates] = useState<Record<string, 'disconnected' | 'connecting' | 'connected' | 'awaiting_auth'>>({})
-  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
-  const [connectionMessage, setConnectionMessage] = useState<StatusMessage | null>(null)
-  const [authUrls, setAuthUrls] = useState<Record<string, string>>({})
-  const [verifyingPlatform, setVerifyingPlatform] = useState<string | null>(null)
-
-  const PUBLISHER_AGENT_ID = '6998cd7e6e83201939577095'
-
-  // Load saved connection states from localStorage
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem('socialflow_connections')
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        if (typeof parsed === 'object' && parsed !== null) {
-          setConnectionStates(parsed)
-        }
-      }
-    } catch { /* ignore */ }
-  }, [])
-
-  const saveConnectionStates = (states: Record<string, string>) => {
-    try { localStorage.setItem('socialflow_connections', JSON.stringify(states)) } catch { /* ignore */ }
-  }
-
-  // Deep search for URLs in any object/string returned by the agent
-  const extractAuthUrl = (data: any): string | null => {
-    if (!data) return null
-    const urlRegex = /https?:\/\/[^\s"'<>\])}]+/gi
-
-    // If it's a string, search for URLs directly
-    if (typeof data === 'string') {
-      const matches = data.match(urlRegex)
-      if (matches) {
-        // Prioritize OAuth/auth URLs
-        const authUrl = matches.find(u =>
-          u.toLowerCase().includes('oauth') ||
-          u.toLowerCase().includes('auth') ||
-          u.toLowerCase().includes('login') ||
-          u.toLowerCase().includes('connect') ||
-          u.toLowerCase().includes('authorize') ||
-          u.toLowerCase().includes('accounts.google') ||
-          u.toLowerCase().includes('facebook.com/dialog') ||
-          u.toLowerCase().includes('linkedin.com/oauth') ||
-          u.toLowerCase().includes('api.instagram') ||
-          u.toLowerCase().includes('twitter.com/i/oauth') ||
-          u.toLowerCase().includes('composio')
-        )
-        return authUrl || matches[0] || null
-      }
-      return null
-    }
-
-    // If it's an array, search each element
-    if (Array.isArray(data)) {
-      for (const item of data) {
-        const found = extractAuthUrl(item)
-        if (found) return found
-      }
-      return null
-    }
-
-    // If it's an object, search each value
-    if (typeof data === 'object') {
-      // Check common URL field names first
-      const urlKeys = ['url', 'auth_url', 'authUrl', 'authorization_url', 'redirect_url', 'redirectUrl', 'login_url', 'loginUrl', 'link', 'href', 'oauth_url']
-      for (const key of urlKeys) {
-        if (data[key] && typeof data[key] === 'string') {
-          const matches = data[key].match(urlRegex)
-          if (matches && matches.length > 0) return matches[0]
-        }
-      }
-      // Then search all values recursively
-      for (const key of Object.keys(data)) {
-        const found = extractAuthUrl(data[key])
-        if (found) return found
-      }
-    }
-
-    return null
-  }
-
   const platforms = [
-    { key: 'twitter', name: 'Twitter / X', icon: <span className="font-bold text-lg leading-none">X</span>, color: 'bg-black text-white', tools: ['TWITTER_CREATION_OF_A_POST', 'TWITTER_USER_LOOKUP_ME'], available: true, testMessage: 'Look up my Twitter profile using TWITTER_USER_LOOKUP_ME to verify the connection is working.' },
-    { key: 'instagram', name: 'Instagram', icon: <Camera className="h-5 w-5" />, color: 'bg-gradient-to-br from-purple-500 to-pink-500 text-white', tools: ['INSTAGRAM_CREATE_A_MEDIA_OBJECT_CONTAINER', 'INSTAGRAM_PUBLISH_A_MEDIA_OBJECT_CONTAINER'], available: true, testMessage: 'Verify my Instagram connection is active and ready for publishing. Do not post anything, just confirm the connection.' },
-    { key: 'linkedin', name: 'LinkedIn', icon: <Briefcase className="h-5 w-5" />, color: 'bg-blue-600 text-white', tools: ['LINKEDIN_CREATE_A_LINKED_IN_TEXT_POST'], available: true, testMessage: 'Verify my LinkedIn connection is active and ready for publishing. Do not post anything, just confirm the connection.' },
-    { key: 'facebook', name: 'Facebook', icon: <span className="font-bold text-lg leading-none">f</span>, color: 'bg-blue-500 text-white', tools: ['FACEBOOK_CREATE_A_PAGE_FEED_POST'], available: true, testMessage: 'Verify my Facebook connection is active and ready for publishing. Do not post anything, just confirm the connection.' },
-    { key: 'tiktok', name: 'TikTok', icon: <Music className="h-5 w-5" />, color: 'bg-black text-white', tools: [], available: false, testMessage: '' },
+    {
+      key: 'twitter',
+      name: 'Twitter / X',
+      icon: <span className="font-bold text-lg leading-none">X</span>,
+      color: 'bg-black text-white',
+      connected: true,
+      capabilities: ['Create posts', 'User lookup'],
+      description: 'Publish tweets, threads, and media posts to your Twitter/X account.',
+    },
+    {
+      key: 'instagram',
+      name: 'Instagram',
+      icon: <Camera className="h-5 w-5" />,
+      color: 'bg-gradient-to-br from-purple-500 to-pink-500 text-white',
+      connected: true,
+      capabilities: ['Create media containers', 'Publish media'],
+      description: 'Publish photos, carousels, and stories to your Instagram account.',
+    },
+    {
+      key: 'linkedin',
+      name: 'LinkedIn',
+      icon: <Briefcase className="h-5 w-5" />,
+      color: 'bg-blue-600 text-white',
+      connected: true,
+      capabilities: ['Create text posts'],
+      description: 'Publish professional content and articles to your LinkedIn profile.',
+    },
+    {
+      key: 'facebook',
+      name: 'Facebook',
+      icon: <span className="font-bold text-lg leading-none">f</span>,
+      color: 'bg-blue-500 text-white',
+      connected: true,
+      capabilities: ['Create page posts'],
+      description: 'Publish posts to your Facebook page feed.',
+    },
+    {
+      key: 'tiktok',
+      name: 'TikTok',
+      icon: <Music className="h-5 w-5" />,
+      color: 'bg-black text-white',
+      connected: false,
+      capabilities: [],
+      description: 'TikTok integration will be available in a future update.',
+    },
   ]
-
-  const handleConnect = async (platform: typeof platforms[0]) => {
-    if (!platform.available) return
-    setConnectingPlatform(platform.key)
-    setConnectionMessage({ type: 'info', text: `Connecting to ${platform.name}... Requesting authorization from the agent.` })
-
-    const updated = { ...connectionStates, [platform.key]: 'connecting' as const }
-    setConnectionStates(updated)
-
-    try {
-      const result = await callAIAgent(platform.testMessage, PUBLISHER_AGENT_ID)
-
-      // Deep search the entire result object for an auth URL
-      const foundUrl = extractAuthUrl(result?.response?.result)
-        || extractAuthUrl(result?.response?.message)
-        || extractAuthUrl(result?.error)
-        || extractAuthUrl(result?.details)
-        || extractAuthUrl(result?.raw_response)
-        || extractAuthUrl(result?.response)
-
-      if (result.success && !foundUrl) {
-        // Agent connected successfully without needing OAuth — already authorized
-        const finalStates = { ...connectionStates, [platform.key]: 'connected' as const }
-        setConnectionStates(finalStates)
-        saveConnectionStates(finalStates)
-        setConnectionMessage({ type: 'success', text: `${platform.name} connected successfully! You can now publish to this platform.` })
-      } else if (foundUrl) {
-        // Found an auth URL — open it and set state to awaiting
-        setAuthUrls(prev => ({ ...prev, [platform.key]: foundUrl }))
-        const finalStates = { ...connectionStates, [platform.key]: 'awaiting_auth' as const }
-        setConnectionStates(finalStates)
-        saveConnectionStates(finalStates)
-        // Open the auth URL in a new tab
-        window.open(foundUrl, '_blank', 'noopener,noreferrer')
-        setConnectionMessage({ type: 'info', text: `Authorization page opened for ${platform.name}. Complete the login in the new tab, then click "Verify Connection" below.` })
-      } else {
-        // No URL found, but also not success — generic error
-        const errorMsg = result?.error || result?.response?.message || ''
-        const finalStates = { ...connectionStates, [platform.key]: 'awaiting_auth' as const }
-        setConnectionStates(finalStates)
-        setConnectionMessage({ type: 'error', text: `${platform.name} requires authorization but no login URL was returned. Error: ${errorMsg || 'Try clicking Connect again.'}` })
-      }
-    } catch {
-      const finalStates = { ...connectionStates, [platform.key]: 'disconnected' as const }
-      setConnectionStates(finalStates)
-      saveConnectionStates(finalStates)
-      setConnectionMessage({ type: 'error', text: `Failed to connect to ${platform.name}. Please check your network and try again.` })
-    }
-    setConnectingPlatform(null)
-  }
-
-  const handleVerifyConnection = async (platform: typeof platforms[0]) => {
-    setVerifyingPlatform(platform.key)
-    setConnectionMessage({ type: 'info', text: `Verifying ${platform.name} connection...` })
-
-    try {
-      const result = await callAIAgent(platform.testMessage, PUBLISHER_AGENT_ID)
-
-      // Check if there is still an auth URL (meaning not yet authorized)
-      const stillNeedsAuth = extractAuthUrl(result?.response?.result)
-        || extractAuthUrl(result?.response?.message)
-        || extractAuthUrl(result?.error)
-
-      if (result.success && !stillNeedsAuth) {
-        const finalStates = { ...connectionStates, [platform.key]: 'connected' as const }
-        setConnectionStates(finalStates)
-        saveConnectionStates(finalStates)
-        setAuthUrls(prev => { const n = { ...prev }; delete n[platform.key]; return n })
-        setConnectionMessage({ type: 'success', text: `${platform.name} verified and connected! Ready to publish.` })
-      } else {
-        setConnectionMessage({ type: 'error', text: `${platform.name} is not yet authorized. Please complete the login in the authorization page and try verifying again.` })
-      }
-    } catch {
-      setConnectionMessage({ type: 'error', text: `Failed to verify ${platform.name}. Please try again.` })
-    }
-    setVerifyingPlatform(null)
-  }
-
-  const handleDisconnect = (platformKey: string) => {
-    const updated = { ...connectionStates }
-    delete updated[platformKey]
-    setConnectionStates(updated)
-    saveConnectionStates(updated)
-    setAuthUrls(prev => { const n = { ...prev }; delete n[platformKey]; return n })
-    setConnectionMessage({ type: 'info', text: 'Platform disconnected locally. Note: To fully revoke access, visit the platform\'s app permissions settings.' })
-  }
-
-  const getStatus = (key: string) => connectionStates[key] || 'disconnected'
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Connected Accounts</h2>
-        <p className="text-sm text-muted-foreground mt-1">Connect your social media accounts to enable publishing. Click &quot;Connect&quot; to start the OAuth authorization flow.</p>
+        <p className="text-sm text-muted-foreground mt-1">Your social media platforms are managed by the publishing agent. Authentication is handled automatically when you publish.</p>
       </div>
-
-      {connectionMessage && (
-        <StatusBanner statusMessage={connectionMessage} onDismiss={() => setConnectionMessage(null)} />
-      )}
 
       {/* How it works info box */}
       <div className="rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur-md p-5 shadow-sm">
@@ -775,152 +641,80 @@ function ConnectedAccountsScreen() {
             <Lightbulb className="h-4 w-4 text-primary" />
           </div>
           <div>
-            <h4 className="font-semibold text-sm text-foreground mb-1">How Connection Works</h4>
+            <h4 className="font-semibold text-sm text-foreground mb-1">How Publishing Works</h4>
             <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside leading-relaxed">
-              <li>Click <strong className="text-foreground">Connect</strong> on any platform below.</li>
-              <li>A new tab will open with the platform&apos;s login page. Log in and grant publishing permissions.</li>
-              <li>After completing authorization, return here and click <strong className="text-foreground">Verify Connection</strong>.</li>
-              <li>Once verified, you can publish content to that platform directly from the Dashboard.</li>
+              <li>Generate your content plan from the <strong className="text-foreground">Dashboard</strong>.</li>
+              <li>Review and customize captions, generate visuals for your posts.</li>
+              <li>Select posts and click <strong className="text-foreground">Publish Selected</strong>.</li>
+              <li>The agent automatically handles authentication and publishes to each platform. If authorization is needed, the agent will guide you through it during publishing.</li>
             </ol>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {platforms.map(p => {
-          const status = getStatus(p.key)
-          const isConnecting = connectingPlatform === p.key
-          const isVerifying = verifyingPlatform === p.key
-          const isConnected = status === 'connected'
-          const isAwaitingAuth = status === 'awaiting_auth'
-          const pendingAuthUrl = authUrls[p.key]
-
-          return (
-            <div key={p.key} className={`rounded-2xl border bg-card/75 backdrop-blur-md p-6 shadow-md transition-all duration-200 hover:shadow-lg ${isConnected ? 'border-green-500/30' : isAwaitingAuth ? 'border-yellow-500/30' : 'border-border/50'}`}>
-              <div className="flex items-center gap-4 mb-4">
-                <div className={`h-12 w-12 rounded-xl ${p.color} flex items-center justify-center shadow-sm`}>
-                  {p.icon}
-                </div>
-                <div>
-                  <h3 className="font-semibold text-foreground">{p.name}</h3>
-                  <div className="flex items-center gap-1.5 mt-0.5">
-                    <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : isConnecting || isVerifying ? 'bg-yellow-500 animate-pulse' : isAwaitingAuth ? 'bg-yellow-500' : p.available ? 'bg-muted-foreground/40' : 'bg-muted-foreground/20'}`} />
-                    <span className={`text-xs ${isConnected ? 'text-green-600 font-medium' : isConnecting || isVerifying ? 'text-yellow-600 font-medium' : isAwaitingAuth ? 'text-yellow-600 font-medium' : 'text-muted-foreground'}`}>
-                      {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : isVerifying ? 'Verifying...' : isAwaitingAuth ? 'Awaiting Authorization' : p.available ? 'Not connected' : 'Coming Soon'}
-                    </span>
-                  </div>
+        {platforms.map(p => (
+          <div key={p.key} className={`rounded-2xl border bg-card/75 backdrop-blur-md p-6 shadow-md transition-all duration-200 hover:shadow-lg ${p.connected ? 'border-green-500/30' : 'border-border/50'}`}>
+            <div className="flex items-center gap-4 mb-4">
+              <div className={`h-12 w-12 rounded-xl ${p.color} flex items-center justify-center shadow-sm`}>
+                {p.icon}
+              </div>
+              <div>
+                <h3 className="font-semibold text-foreground">{p.name}</h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <div className={`h-2 w-2 rounded-full ${p.connected ? 'bg-green-500' : 'bg-muted-foreground/30'}`} />
+                  <span className={`text-xs ${p.connected ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>
+                    {p.connected ? 'Available' : 'Coming Soon'}
+                  </span>
                 </div>
               </div>
+            </div>
 
-              {/* Connected state */}
-              {isConnected && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
-                    <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Authorized and ready to publish.</span>
-                  </div>
-                  {Array.isArray(p.tools) && p.tools.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {p.tools.map((tool: string) => (
-                        <span key={tool} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/30 font-mono">
-                          {tool.replace(/_/g, ' ').toLowerCase()}
+            <p className="text-xs text-muted-foreground leading-relaxed mb-3">{p.description}</p>
+
+            {p.connected ? (
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
+                  <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Integrated and ready. Auth handled automatically.</span>
+                </div>
+                {Array.isArray(p.capabilities) && p.capabilities.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Capabilities</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {p.capabilities.map((cap: string, idx: number) => (
+                        <span key={idx} className="inline-flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/30">
+                          <CheckCircle className="h-2.5 w-2.5 text-green-500" />
+                          {cap}
                         </span>
                       ))}
                     </div>
-                  )}
-                  <Button size="sm" variant="ghost" onClick={() => handleDisconnect(p.key)} className="w-full text-xs text-muted-foreground hover:text-destructive gap-1.5">
-                    <X className="h-3 w-3" />
-                    Disconnect
-                  </Button>
-                </div>
-              )}
-
-              {/* Connecting state */}
-              {isConnecting && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-500/10 rounded-lg px-3 py-2.5 border border-yellow-500/20">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
-                    <span>Requesting authorization from agent...</span>
                   </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">A new tab should open for you to log in. Please wait...</p>
-                </div>
-              )}
+                )}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 border border-border/30">
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                <span>Integration available in a future update.</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
 
-              {/* Awaiting authorization -- user needs to complete OAuth then verify */}
-              {isAwaitingAuth && !isConnecting && !isVerifying && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-500/10 rounded-lg px-3 py-2.5 border border-yellow-500/20">
-                    <ExternalLink className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span>Complete authorization in the opened tab.</span>
-                  </div>
-                  <p className="text-[11px] text-muted-foreground leading-relaxed">
-                    Log in to {p.name} and grant permissions in the authorization page. After completing, click the button below.
-                  </p>
-                  {pendingAuthUrl && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => window.open(pendingAuthUrl, '_blank', 'noopener,noreferrer')}
-                      className="w-full gap-2 text-xs border-yellow-500/30 text-yellow-700 hover:bg-yellow-500/5"
-                    >
-                      <ExternalLink className="h-3.5 w-3.5" />
-                      Re-open Authorization Page
-                    </Button>
-                  )}
-                  <Button
-                    size="sm"
-                    variant="default"
-                    onClick={() => handleVerifyConnection(p)}
-                    className="w-full gap-2"
-                  >
-                    <CheckCircle className="h-3.5 w-3.5" />
-                    Verify Connection
-                  </Button>
-                  <Button size="sm" variant="ghost" onClick={() => handleDisconnect(p.key)} className="w-full text-xs text-muted-foreground gap-1.5">
-                    <X className="h-3 w-3" />
-                    Cancel
-                  </Button>
-                </div>
-              )}
-
-              {/* Verifying state */}
-              {isVerifying && (
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-500/10 rounded-lg px-3 py-2.5 border border-yellow-500/20">
-                    <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
-                    <span>Verifying your authorization...</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Disconnected and available */}
-              {!isConnected && !isConnecting && !isAwaitingAuth && !isVerifying && p.available && (
-                <div className="space-y-3">
-                  <p className="text-xs text-muted-foreground leading-relaxed">
-                    Authorize SocialFlow AI to publish content to your {p.name} account.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => handleConnect(p)}
-                    className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
-                  >
-                    <Link2 className="h-3.5 w-3.5" />
-                    Connect {p.name}
-                  </Button>
-                </div>
-              )}
-
-              {/* Not available */}
-              {!p.available && (
-                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 border border-border/30">
-                  <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>Integration available in a future update.</span>
-                </div>
-              )}
-            </div>
-          )
-        })}
+      {/* Additional context */}
+      <div className="rounded-2xl border border-border/50 bg-card/75 backdrop-blur-md p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="h-8 w-8 rounded-lg bg-muted/50 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Target className="h-4 w-4 text-muted-foreground" />
+          </div>
+          <div>
+            <h4 className="font-semibold text-sm text-foreground mb-1">First-Time Publishing</h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              When you publish to a platform for the first time, the agent may prompt you to authorize access. This is a one-time process -- once authorized, all future posts will be published seamlessly without any additional login steps.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   )
