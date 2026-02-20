@@ -108,7 +108,25 @@ export async function callAIAgent(
       }
     }
 
-    const submitData = await submitRes.json()
+    let submitData: any
+    try {
+      submitData = await submitRes.json()
+    } catch {
+      return {
+        success: false,
+        response: { status: 'error', result: {}, message: `Server returned status ${submitRes.status} with non-JSON response` },
+        error: `Server returned status ${submitRes.status}`,
+      }
+    }
+
+    // Handle HTTP error responses that now pass through fetchWrapper
+    if (!submitRes.ok && !submitData.task_id) {
+      return {
+        success: false,
+        response: submitData.response || { status: 'error', result: {}, message: submitData.error || `Server error (${submitRes.status})` },
+        error: submitData.error || `Server error (${submitRes.status})`,
+      }
+    }
 
     // If submit itself failed or no task_id returned, return as-is
     if (!submitData.task_id) {
@@ -140,13 +158,32 @@ export async function callAIAgent(
       if (!pollRes) {
         continue // fetchWrapper returned undefined (redirect/error) — retry next poll
       }
-      const pollData = await pollRes.json()
+
+      let pollData: any
+      try {
+        pollData = await pollRes.json()
+      } catch {
+        console.warn('[callAIAgent] Poll returned non-JSON response, retrying...')
+        continue
+      }
 
       if (pollData.status === 'processing') {
         continue
       }
 
-      // Completed or failed — attach agent_id/user_id/session_id and return
+      // If poll returned a failed status, return the error properly
+      if (pollData.status === 'failed' || pollData.success === false) {
+        return {
+          success: false,
+          response: pollData.response || { status: 'error', result: {}, message: pollData.error || 'Agent task failed' },
+          error: pollData.error || 'Agent task failed',
+          agent_id,
+          user_id,
+          session_id,
+        }
+      }
+
+      // Completed — attach agent_id/user_id/session_id and return
       return {
         ...pollData,
         agent_id,

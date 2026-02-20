@@ -935,7 +935,9 @@ export default function Page() {
     setStatusMessage({ type: 'info', text: 'Generating your content plan... This may take a moment as research and calendar agents work together.' })
 
     try {
+      console.log('[SocialFlow] Generating content plan with agent:', CONTENT_STRATEGY_AGENT_ID)
       const result = await callAIAgent(prompt, CONTENT_STRATEGY_AGENT_ID)
+      console.log('[SocialFlow] Plan result:', result?.success, result?.error)
       if (result.success && result?.response?.result) {
         const plan = result.response.result as ContentPlan
         setContentPlan(plan)
@@ -947,9 +949,12 @@ export default function Page() {
         setStatusMessage({ type: 'success', text: 'Content plan generated successfully!' })
         saveCampaign(plan, prompt)
       } else {
-        setStatusMessage({ type: 'error', text: result?.error ?? 'Failed to generate content plan. Please try again.' })
+        const errorMsg = result?.error || result?.response?.message || 'Failed to generate content plan. Please try again.'
+        console.error('[SocialFlow] Plan failed:', errorMsg)
+        setStatusMessage({ type: 'error', text: errorMsg })
       }
-    } catch {
+    } catch (err) {
+      console.error('[SocialFlow] Plan exception:', err)
       setStatusMessage({ type: 'error', text: 'An error occurred while generating the plan. Please try again.' })
     }
     setActiveAgentId(null)
@@ -1004,6 +1009,14 @@ export default function Page() {
 
     const items = Array.isArray(contentPlan?.content_calendar?.items) ? contentPlan.content_calendar.items : []
     const postsToPublish = items.filter(item => selectedPosts.has(item.post_id))
+
+    if (postsToPublish.length === 0) {
+      setStatusMessage({ type: 'error', text: 'No matching posts found. Please try regenerating your content plan.' })
+      setIsPublishing(false)
+      setActiveAgentId(null)
+      return
+    }
+
     const publishData = postsToPublish.map(post => ({
       post_id: post.post_id,
       platform: post.platform,
@@ -1014,7 +1027,10 @@ export default function Page() {
     const message = `Publish the following social media posts to their respective platforms:\n${JSON.stringify(publishData, null, 2)}`
 
     try {
+      console.log('[SocialFlow] Publishing posts:', publishData.map(p => `${p.post_id} (${p.platform})`))
       const result = await callAIAgent(message, SOCIAL_PUBLISHER_AGENT_ID)
+      console.log('[SocialFlow] Publish result:', result?.success, result?.error)
+
       if (result.success && result?.response?.result) {
         const pubResult = result.response.result as PublishResult
         setPublishResults(pubResult)
@@ -1029,10 +1045,13 @@ export default function Page() {
         const failed = pubResult?.total_failed ?? 0
         setStatusMessage({ type: failed > 0 ? 'error' : 'success', text: pubResult?.summary ?? `Published: ${published}, Failed: ${failed}` })
       } else {
-        setStatusMessage({ type: 'error', text: result?.error ?? 'Failed to publish posts.' })
+        const errorMsg = result?.error || result?.response?.message || 'Failed to publish posts. The agent may need authorization for the target platforms.'
+        console.error('[SocialFlow] Publish failed:', errorMsg)
+        setStatusMessage({ type: 'error', text: errorMsg })
       }
-    } catch {
-      setStatusMessage({ type: 'error', text: 'An error occurred while publishing.' })
+    } catch (err) {
+      console.error('[SocialFlow] Publish exception:', err)
+      setStatusMessage({ type: 'error', text: 'An error occurred while publishing. Check the console for details.' })
     }
     setActiveAgentId(null)
     setIsPublishing(false)
