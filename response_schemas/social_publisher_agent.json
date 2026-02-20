@@ -4,6 +4,8 @@
   "agent_type": "json",
   "accessor": "json",
   "has_module_outputs": false,
+  "tools": ["TWITTER_CREATION_OF_A_POST", "TWITTER_USER_LOOKUP_ME", "INSTAGRAM_CREATE_A_MEDIA_OBJECT_CONTAINER", "INSTAGRAM_PUBLISH_A_MEDIA_OBJECT_CONTAINER", "FACEBOOK_CREATE_A_PAGE_FEED_POST", "LINKEDIN_CREATE_A_LINKED_IN_TEXT_POST"],
+  "supported_platforms": ["Twitter", "Instagram", "Facebook", "LinkedIn"],
   "response_schema": {
     "type": "json_schema",
     "json_schema": {

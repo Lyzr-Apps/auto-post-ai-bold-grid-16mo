@@ -580,11 +580,11 @@ function PostCard({
 
 function ConnectedAccountsScreen() {
   const platforms = [
-    { name: 'Twitter / X', icon: <span className="font-bold text-lg leading-none">X</span>, color: 'bg-black text-white', status: 'Connected', connected: true },
-    { name: 'Instagram', icon: <Camera className="h-5 w-5" />, color: 'bg-gradient-to-br from-purple-500 to-pink-500 text-white', status: 'Coming Soon', connected: false },
-    { name: 'LinkedIn', icon: <Briefcase className="h-5 w-5" />, color: 'bg-blue-600 text-white', status: 'Coming Soon', connected: false },
-    { name: 'Facebook', icon: <span className="font-bold text-lg leading-none">f</span>, color: 'bg-blue-500 text-white', status: 'Coming Soon', connected: false },
-    { name: 'TikTok', icon: <Music className="h-5 w-5" />, color: 'bg-black text-white', status: 'Coming Soon', connected: false },
+    { name: 'Twitter / X', icon: <span className="font-bold text-lg leading-none">X</span>, color: 'bg-black text-white', status: 'Connected', connected: true, tools: ['TWITTER_CREATION_OF_A_POST', 'TWITTER_USER_LOOKUP_ME'] },
+    { name: 'Instagram', icon: <Camera className="h-5 w-5" />, color: 'bg-gradient-to-br from-purple-500 to-pink-500 text-white', status: 'Connected', connected: true, tools: ['INSTAGRAM_CREATE_A_MEDIA_OBJECT_CONTAINER', 'INSTAGRAM_PUBLISH_A_MEDIA_OBJECT_CONTAINER'] },
+    { name: 'LinkedIn', icon: <Briefcase className="h-5 w-5" />, color: 'bg-blue-600 text-white', status: 'Connected', connected: true, tools: ['LINKEDIN_CREATE_A_LINKED_IN_TEXT_POST'] },
+    { name: 'Facebook', icon: <span className="font-bold text-lg leading-none">f</span>, color: 'bg-blue-500 text-white', status: 'Connected', connected: true, tools: ['FACEBOOK_CREATE_A_PAGE_FEED_POST'] },
+    { name: 'TikTok', icon: <Music className="h-5 w-5" />, color: 'bg-black text-white', status: 'Coming Soon', connected: false, tools: [] },
   ]
 
   return (
@@ -609,9 +609,20 @@ function ConnectedAccountsScreen() {
               </div>
             </div>
             {p.connected ? (
-              <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
-                <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>Authenticated via agent. Ready to publish.</span>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
+                  <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Authenticated via agent. Ready to publish.</span>
+                </div>
+                {Array.isArray(p.tools) && p.tools.length > 0 && (
+                  <div className="flex flex-wrap gap-1">
+                    {p.tools.map((tool: string) => (
+                      <span key={tool} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/30 font-mono">
+                        {tool.replace(/_/g, ' ').toLowerCase()}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 border border-border/30">
