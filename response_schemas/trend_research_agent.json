@@ -1,0 +1,69 @@
+{
+  "agent_name": "Trend & Platform Research Agent",
+  "agent_id": "6998cd4da84911a83d1ac249",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "AgentResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "trending_topics": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "platform_insights": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform": { "type": "string" },
+                "best_practices": { "type": "string" },
+                "content_formats": { "type": "string" },
+                "audience_tips": { "type": "string" }
+              },
+              "required": ["platform", "best_practices", "content_formats", "audience_tips"],
+              "additionalProperties": false
+            }
+          },
+          "hashtag_recommendations": {
+            "type": "object",
+            "properties": {
+              "high_volume": { "type": "array", "items": { "type": "string" } },
+              "niche": { "type": "array", "items": { "type": "string" } }
+            },
+            "required": ["high_volume", "niche"],
+            "additionalProperties": false
+          },
+          "content_format_recommendations": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "optimal_posting_times": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "platform": { "type": "string" },
+                "best_times": { "type": "string" },
+                "best_days": { "type": "string" }
+              },
+              "required": ["platform", "best_times", "best_days"],
+              "additionalProperties": false
+            }
+          },
+          "engagement_strategies": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        },
+        "required": ["trending_topics", "platform_insights", "hashtag_recommendations", "content_format_recommendations", "optimal_posting_times", "engagement_strategies"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

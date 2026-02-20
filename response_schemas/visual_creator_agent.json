@@ -1,0 +1,28 @@
+{
+  "agent_name": "Visual Creator Agent",
+  "agent_id": "6998cd7edfb56bc22e407ef6",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": true,
+  "module_outputs_note": "Images are returned via module_outputs.artifact_files array. Each item contains a file_url pointing to the generated image.",
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "AgentResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "post_id": { "type": "string" },
+          "visual_description": { "type": "string" },
+          "platform": { "type": "string" },
+          "image_style": { "type": "string" },
+          "dimensions": { "type": "string" },
+          "generation_notes": { "type": "string" }
+        },
+        "required": ["post_id", "visual_description", "platform", "image_style", "dimensions", "generation_notes"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "agent_name": "Social Publisher Agent",
+  "agent_id": "6998cd7e6e83201939577095",
+  "description": "Posts approved content (text + images) to connected social media platforms via their APIs",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "published_posts": [
+      {
+        "post_id": "string",
+        "platform": "string",
+        "status": "string",
+        "post_url": "string",
+        "error_message": "string"
+      }
+    ],
+    "total_published": "number",
+    "total_failed": "number",
+    "summary": "string"
+  },
+  "example_response": {
+    "published_posts": [
+      {
+        "post_id": "sample string",
+        "platform": "sample string",
+        "status": "sample string",
+        "post_url": "sample string",
+        "error_message": "sample string"
+      }
+    ],
+    "total_published": 0,
+    "total_failed": 0,
+    "summary": "sample string"
+  }
+}

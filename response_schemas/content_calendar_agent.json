@@ -1,0 +1,47 @@
+{
+  "agent_name": "Content Calendar Agent",
+  "agent_id": "6998cd4d8d370e1a6cc0b9ed",
+  "agent_type": "json",
+  "accessor": "json",
+  "has_module_outputs": false,
+  "response_schema": {
+    "type": "json_schema",
+    "json_schema": {
+      "name": "AgentResponse",
+      "strict": true,
+      "schema": {
+        "type": "object",
+        "properties": {
+          "campaign_summary": { "type": "string" },
+          "total_posts": { "type": "number" },
+          "platforms": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "calendar_items": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "post_id": { "type": "string" },
+                "platform": { "type": "string" },
+                "post_date": { "type": "string" },
+                "post_time": { "type": "string" },
+                "content_type": { "type": "string" },
+                "caption": { "type": "string" },
+                "hashtags": { "type": "array", "items": { "type": "string" } },
+                "visual_concept": { "type": "string" },
+                "engagement_hook": { "type": "string" },
+                "notes": { "type": "string" }
+              },
+              "required": ["post_id", "platform", "post_date", "post_time", "content_type", "caption", "hashtags", "visual_concept", "engagement_hook", "notes"],
+              "additionalProperties": false
+            }
+          }
+        },
+        "required": ["campaign_summary", "total_posts", "platforms", "calendar_items"],
+        "additionalProperties": false
+      }
+    }
+  }
+}

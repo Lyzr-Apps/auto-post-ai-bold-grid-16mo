@@ -1,0 +1,32 @@
+{
+  "agent_name": "Visual Creator Agent",
+  "agent_id": "6998cd7edfb56bc22e407ef6",
+  "description": "Generates carousel slides, social media images, and visual assets for individual content items based on the content plan details",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "post_id": "string",
+    "visual_description": "string",
+    "platform": "string",
+    "image_style": "string",
+    "dimensions": "string",
+    "generation_notes": "string"
+  },
+  "example_response": {
+    "post_id": "sample string",
+    "visual_description": "sample string",
+    "platform": "sample string",
+    "image_style": "sample string",
+    "dimensions": "sample string",
+    "generation_notes": "sample string"
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/image.png"
+      }
+    ]
+  }
+}

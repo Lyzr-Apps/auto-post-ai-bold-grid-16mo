@@ -1,0 +1,24 @@
+{
+  "agents": {
+    "trend_research_agent": {
+      "agent_id": "6998cd4da84911a83d1ac249",
+      "name": "Trend & Platform Research Agent"
+    },
+    "content_calendar_agent": {
+      "agent_id": "6998cd4d8d370e1a6cc0b9ed",
+      "name": "Content Calendar Agent"
+    },
+    "content_strategy_manager": {
+      "agent_id": "6998cd62344803d1bba89563",
+      "name": "Content Strategy Manager"
+    },
+    "visual_creator_agent": {
+      "agent_id": "6998cd7edfb56bc22e407ef6",
+      "name": "Visual Creator Agent"
+    },
+    "social_publisher_agent": {
+      "agent_id": "6998cd7e6e83201939577095",
+      "name": "Social Publisher Agent"
+    }
+  }
+}

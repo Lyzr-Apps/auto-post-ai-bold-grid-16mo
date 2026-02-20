@@ -1,0 +1,96 @@
+{
+  "agent_name": "Content Strategy Manager",
+  "agent_id": "6998cd62344803d1bba89563",
+  "description": "Coordinates trend research and content calendar generation, aggregates results into a unified content plan for review",
+  "agent_type": "json",
+  "accessor": "result",
+  "auto_generated": true,
+  "response_schema": {
+    "campaign_overview": "string",
+    "research_insights": {
+      "trending_topics": [
+        "string"
+      ],
+      "key_findings": "string",
+      "platform_recommendations": [
+        {
+          "platform": "string",
+          "strategy": "string"
+        }
+      ]
+    },
+    "content_calendar": {
+      "total_posts": "number",
+      "platforms": [
+        "string"
+      ],
+      "items": [
+        {
+          "post_id": "string",
+          "platform": "string",
+          "post_date": "string",
+          "post_time": "string",
+          "content_type": "string",
+          "caption": "string",
+          "hashtags": [
+            "string"
+          ],
+          "visual_concept": "string",
+          "engagement_hook": "string",
+          "status": "string"
+        }
+      ]
+    },
+    "strategic_recommendations": [
+      "string"
+    ]
+  },
+  "example_response": {
+    "campaign_overview": "sample string",
+    "research_insights": {
+      "trending_topics": [
+        "sample string"
+      ],
+      "key_findings": "sample string",
+      "platform_recommendations": [
+        {
+          "platform": "sample string",
+          "strategy": "sample string"
+        }
+      ]
+    },
+    "content_calendar": {
+      "total_posts": 0,
+      "platforms": [
+        "sample string"
+      ],
+      "items": [
+        {
+          "post_id": "sample string",
+          "platform": "sample string",
+          "post_date": "sample string",
+          "post_time": "sample string",
+          "content_type": "sample string",
+          "caption": "sample string",
+          "hashtags": [
+            "sample string"
+          ],
+          "visual_concept": "sample string",
+          "engagement_hook": "sample string",
+          "status": "sample string"
+        }
+      ]
+    },
+    "strategic_recommendations": [
+      "sample string"
+    ]
+  },
+  "has_module_outputs": true,
+  "module_outputs_example": {
+    "artifact_files": [
+      {
+        "file_url": "https://example.com/image.png"
+      }
+    ]
+  }
+}
