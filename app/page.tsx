@@ -579,59 +579,200 @@ function PostCard({
 }
 
 function ConnectedAccountsScreen() {
+  const [connectionStates, setConnectionStates] = useState<Record<string, 'disconnected' | 'connecting' | 'connected'>>({})
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null)
+  const [connectionMessage, setConnectionMessage] = useState<StatusMessage | null>(null)
+
+  const PUBLISHER_AGENT_ID = '6998cd7e6e83201939577095'
+
+  // Load saved connection states from localStorage
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('socialflow_connections')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (typeof parsed === 'object' && parsed !== null) {
+          setConnectionStates(parsed)
+        }
+      }
+    } catch { /* ignore */ }
+  }, [])
+
+  const saveConnectionStates = (states: Record<string, string>) => {
+    try { localStorage.setItem('socialflow_connections', JSON.stringify(states)) } catch { /* ignore */ }
+  }
+
   const platforms = [
-    { name: 'Twitter / X', icon: <span className="font-bold text-lg leading-none">X</span>, color: 'bg-black text-white', status: 'Connected', connected: true, tools: ['TWITTER_CREATION_OF_A_POST', 'TWITTER_USER_LOOKUP_ME'] },
-    { name: 'Instagram', icon: <Camera className="h-5 w-5" />, color: 'bg-gradient-to-br from-purple-500 to-pink-500 text-white', status: 'Connected', connected: true, tools: ['INSTAGRAM_CREATE_A_MEDIA_OBJECT_CONTAINER', 'INSTAGRAM_PUBLISH_A_MEDIA_OBJECT_CONTAINER'] },
-    { name: 'LinkedIn', icon: <Briefcase className="h-5 w-5" />, color: 'bg-blue-600 text-white', status: 'Connected', connected: true, tools: ['LINKEDIN_CREATE_A_LINKED_IN_TEXT_POST'] },
-    { name: 'Facebook', icon: <span className="font-bold text-lg leading-none">f</span>, color: 'bg-blue-500 text-white', status: 'Connected', connected: true, tools: ['FACEBOOK_CREATE_A_PAGE_FEED_POST'] },
-    { name: 'TikTok', icon: <Music className="h-5 w-5" />, color: 'bg-black text-white', status: 'Coming Soon', connected: false, tools: [] },
+    { key: 'twitter', name: 'Twitter / X', icon: <span className="font-bold text-lg leading-none">X</span>, color: 'bg-black text-white', tools: ['TWITTER_CREATION_OF_A_POST', 'TWITTER_USER_LOOKUP_ME'], available: true, testMessage: 'Look up my Twitter profile using TWITTER_USER_LOOKUP_ME to verify the connection is working.' },
+    { key: 'instagram', name: 'Instagram', icon: <Camera className="h-5 w-5" />, color: 'bg-gradient-to-br from-purple-500 to-pink-500 text-white', tools: ['INSTAGRAM_CREATE_A_MEDIA_OBJECT_CONTAINER', 'INSTAGRAM_PUBLISH_A_MEDIA_OBJECT_CONTAINER'], available: true, testMessage: 'Verify my Instagram connection is active and ready for publishing. Do not post anything, just confirm the connection.' },
+    { key: 'linkedin', name: 'LinkedIn', icon: <Briefcase className="h-5 w-5" />, color: 'bg-blue-600 text-white', tools: ['LINKEDIN_CREATE_A_LINKED_IN_TEXT_POST'], available: true, testMessage: 'Verify my LinkedIn connection is active and ready for publishing. Do not post anything, just confirm the connection.' },
+    { key: 'facebook', name: 'Facebook', icon: <span className="font-bold text-lg leading-none">f</span>, color: 'bg-blue-500 text-white', tools: ['FACEBOOK_CREATE_A_PAGE_FEED_POST'], available: true, testMessage: 'Verify my Facebook connection is active and ready for publishing. Do not post anything, just confirm the connection.' },
+    { key: 'tiktok', name: 'TikTok', icon: <Music className="h-5 w-5" />, color: 'bg-black text-white', tools: [], available: false, testMessage: '' },
   ]
+
+  const handleConnect = async (platform: typeof platforms[0]) => {
+    if (!platform.available) return
+    setConnectingPlatform(platform.key)
+    setConnectionMessage({ type: 'info', text: `Connecting to ${platform.name}... The agent will initiate OAuth authorization. If a new window opens, please complete the authorization.` })
+
+    const updated = { ...connectionStates, [platform.key]: 'connecting' as const }
+    setConnectionStates(updated)
+
+    try {
+      const result = await callAIAgent(platform.testMessage, PUBLISHER_AGENT_ID)
+      if (result.success) {
+        const finalStates = { ...connectionStates, [platform.key]: 'connected' as const }
+        setConnectionStates(finalStates)
+        saveConnectionStates(finalStates)
+        setConnectionMessage({ type: 'success', text: `${platform.name} connected successfully! You can now publish to this platform.` })
+      } else {
+        const errorMsg = result?.error || ''
+        // If the error contains an auth URL, the user needs to complete OAuth
+        if (errorMsg.toLowerCase().includes('auth') || errorMsg.toLowerCase().includes('url') || errorMsg.toLowerCase().includes('oauth') || errorMsg.toLowerCase().includes('login') || errorMsg.toLowerCase().includes('authorize')) {
+          const finalStates = { ...connectionStates, [platform.key]: 'disconnected' as const }
+          setConnectionStates(finalStates)
+          saveConnectionStates(finalStates)
+          setConnectionMessage({ type: 'info', text: `${platform.name} requires authorization. Please check if a popup window opened for OAuth login. If blocked, check your browser popup settings and try again.` })
+        } else {
+          const finalStates = { ...connectionStates, [platform.key]: 'disconnected' as const }
+          setConnectionStates(finalStates)
+          saveConnectionStates(finalStates)
+          setConnectionMessage({ type: 'error', text: `Could not connect to ${platform.name}: ${errorMsg || 'Unknown error. Please try again.'}` })
+        }
+      }
+    } catch {
+      const finalStates = { ...connectionStates, [platform.key]: 'disconnected' as const }
+      setConnectionStates(finalStates)
+      saveConnectionStates(finalStates)
+      setConnectionMessage({ type: 'error', text: `Failed to connect to ${platform.name}. Please check your network and try again.` })
+    }
+    setConnectingPlatform(null)
+  }
+
+  const handleDisconnect = (platformKey: string) => {
+    const updated = { ...connectionStates }
+    delete updated[platformKey]
+    setConnectionStates(updated)
+    saveConnectionStates(updated)
+    setConnectionMessage({ type: 'info', text: 'Platform disconnected locally. Note: To fully revoke access, visit the platform\'s app permissions settings.' })
+  }
+
+  const getStatus = (key: string) => connectionStates[key] || 'disconnected'
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-foreground">Connected Accounts</h2>
-        <p className="text-sm text-muted-foreground mt-1">Manage your social media platform connections. The agent handles authentication internally.</p>
+        <p className="text-sm text-muted-foreground mt-1">Connect your social media accounts to enable publishing. Click &quot;Connect&quot; to authorize each platform via OAuth.</p>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {platforms.map(p => (
-          <div key={p.name} className="rounded-2xl border border-border/50 bg-card/75 backdrop-blur-md p-6 shadow-md transition-all duration-200 hover:shadow-lg">
-            <div className="flex items-center gap-4 mb-4">
-              <div className={`h-12 w-12 rounded-xl ${p.color} flex items-center justify-center`}>
-                {p.icon}
-              </div>
-              <div>
-                <h3 className="font-semibold text-foreground">{p.name}</h3>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className={`h-2 w-2 rounded-full ${p.connected ? 'bg-green-500' : 'bg-muted-foreground/40'}`} />
-                  <span className={`text-xs ${p.connected ? 'text-green-600 font-medium' : 'text-muted-foreground'}`}>{p.status}</span>
-                </div>
-              </div>
-            </div>
-            {p.connected ? (
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
-                  <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                  <span>Authenticated via agent. Ready to publish.</span>
-                </div>
-                {Array.isArray(p.tools) && p.tools.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
-                    {p.tools.map((tool: string) => (
-                      <span key={tool} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/30 font-mono">
-                        {tool.replace(/_/g, ' ').toLowerCase()}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 border border-border/30">
-                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
-                <span>Integration available in a future update.</span>
-              </div>
-            )}
+
+      {connectionMessage && (
+        <StatusBanner statusMessage={connectionMessage} onDismiss={() => setConnectionMessage(null)} />
+      )}
+
+      {/* How it works info box */}
+      <div className="rounded-2xl border border-primary/20 bg-primary/5 backdrop-blur-md p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
+            <Lightbulb className="h-4 w-4 text-primary" />
           </div>
-        ))}
+          <div>
+            <h4 className="font-semibold text-sm text-foreground mb-1">How Connection Works</h4>
+            <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside leading-relaxed">
+              <li>Click <strong className="text-foreground">Connect</strong> on any platform below.</li>
+              <li>The agent will initiate an OAuth authorization flow. A popup or redirect may open for you to log in and grant publishing permissions.</li>
+              <li>Once authorized, the connection is stored securely by the agent -- you will not need to reconnect unless you revoke access.</li>
+              <li>After connecting, you can publish content to that platform directly from the Dashboard.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {platforms.map(p => {
+          const status = getStatus(p.key)
+          const isConnecting = connectingPlatform === p.key
+          const isConnected = status === 'connected'
+
+          return (
+            <div key={p.key} className={`rounded-2xl border bg-card/75 backdrop-blur-md p-6 shadow-md transition-all duration-200 hover:shadow-lg ${isConnected ? 'border-green-500/30' : 'border-border/50'}`}>
+              <div className="flex items-center gap-4 mb-4">
+                <div className={`h-12 w-12 rounded-xl ${p.color} flex items-center justify-center shadow-sm`}>
+                  {p.icon}
+                </div>
+                <div>
+                  <h3 className="font-semibold text-foreground">{p.name}</h3>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <div className={`h-2 w-2 rounded-full ${isConnected ? 'bg-green-500' : isConnecting ? 'bg-yellow-500 animate-pulse' : p.available ? 'bg-muted-foreground/40' : 'bg-muted-foreground/20'}`} />
+                    <span className={`text-xs ${isConnected ? 'text-green-600 font-medium' : isConnecting ? 'text-yellow-600 font-medium' : 'text-muted-foreground'}`}>
+                      {isConnected ? 'Connected' : isConnecting ? 'Connecting...' : p.available ? 'Not connected' : 'Coming Soon'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Connected state */}
+              {isConnected && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-green-600 bg-green-500/10 rounded-lg px-3 py-2 border border-green-500/20">
+                    <CheckCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span>Authorized and ready to publish.</span>
+                  </div>
+                  {Array.isArray(p.tools) && p.tools.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {p.tools.map((tool: string) => (
+                        <span key={tool} className="inline-block text-[10px] px-2 py-0.5 rounded-full bg-muted/50 text-muted-foreground border border-border/30 font-mono">
+                          {tool.replace(/_/g, ' ').toLowerCase()}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <Button size="sm" variant="ghost" onClick={() => handleDisconnect(p.key)} className="w-full text-xs text-muted-foreground hover:text-destructive gap-1.5">
+                    <X className="h-3 w-3" />
+                    Disconnect
+                  </Button>
+                </div>
+              )}
+
+              {/* Connecting state */}
+              {isConnecting && (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-xs text-yellow-600 bg-yellow-500/10 rounded-lg px-3 py-2.5 border border-yellow-500/20">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin flex-shrink-0" />
+                    <span>Initiating OAuth authorization...</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">If a popup opens, complete the login. If nothing happens, check your popup blocker settings.</p>
+                </div>
+              )}
+
+              {/* Disconnected and available */}
+              {!isConnected && !isConnecting && p.available && (
+                <div className="space-y-3">
+                  <p className="text-xs text-muted-foreground leading-relaxed">
+                    Authorize SocialFlow AI to publish content to your {p.name} account.
+                  </p>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleConnect(p)}
+                    className="w-full gap-2 border-primary/30 text-primary hover:bg-primary/5"
+                  >
+                    <Link2 className="h-3.5 w-3.5" />
+                    Connect {p.name}
+                  </Button>
+                </div>
+              )}
+
+              {/* Not available */}
+              {!p.available && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-lg px-3 py-2 border border-border/30">
+                  <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                  <span>Integration available in a future update.</span>
+                </div>
+              )}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
